@@ -2,6 +2,12 @@
 
 LightLogo (LLogo) aims to provide a simple, lightweight, and powerful 3D agent-based simulation toolkit for education and scientific research.
 
+### Installation
+
+```
+    pip install LightLogo
+```
+
 ### Features
 
 - Redesigned turtle and more agent types that support 3D contexts;

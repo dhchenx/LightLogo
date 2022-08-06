@@ -53,7 +53,7 @@ auto_deploy(
     requires="matplotlib", # use ; for multiple requires
     license='BSD-3',
     license_filename='LICENSE',
-    keywords="logo, lightlogo, agent-based modeling, simulation, turtle in 3D",
+    keywords="logo, lightlogo, llogo, agent-based modeling, simulation, turtle in 3D",
     github_username="dhchenx",
     readme_path="README.md",
    # console_scripts=""
