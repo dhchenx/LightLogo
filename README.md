@@ -10,6 +10,9 @@ LightLogo (LLogo) aims to provide a simple, lightweight, and powerful 3D agent-b
   
 - Following the basic principles of Logo language but with significant improvement. 
 
+## Simulation screenshot
+
+![](images/screenshot1.png)
 
 ### License
 
