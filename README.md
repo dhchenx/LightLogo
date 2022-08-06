@@ -2,7 +2,7 @@
 
 LightLogo (LLogo) aims to provide a simple, lightweight, and powerful 3D agent-based simulation toolkit for education and scientific research.
 
-## Features
+### Features
 
 - Redesigned turtle and more agent types that support 3D contexts;
   
@@ -10,9 +10,9 @@ LightLogo (LLogo) aims to provide a simple, lightweight, and powerful 3D agent-b
   
 - Following the basic principles of Logo language but with significant improvement. 
 
-## Simulation screenshot
+### Simulation screenshot
 
-![](images/screenshot1.png)
+![](https://dhchenx.github.io/projects/LightLogo/images/screenshot1.png)
 
 ### License
 
