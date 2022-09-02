@@ -46,7 +46,7 @@ auto_deploy(
     dists_root=f"dists",
     pypi_token='../pypi_upload_token.txt',
     test=False,
-    version="0.0.1a0",
+    version="0.0.1a1",
     project_url="http://github.com/dhchenx/LightLogo",
     author_name="Donghua Chen",
     author_email="douglaschan@126.com",

@@ -49,7 +49,7 @@ class turtle3D:
         turtle3D.turtle_counter = turtle3D.turtle_counter + 1
         return turtle3D.turtle_counter + 1
 
-    def __init__(self,x=0,y=0,z=0,xyz=None,shape="*",size=1,color="blue",type="turtle",variables:dict=None):
+    def __init__(self,x=0,y=0,z=0,xyz=None,shape="*",size=5,color="green",type="turtle",variables:dict=None,shapeimage="tur.png"):
         self.x=x
         self.y=y
         self.z=z
@@ -88,6 +88,12 @@ class turtle3D:
         self.variables={}
         if variables!=None:
             self.variables=variables
+        self.shapeimage=shapeimage
+
+    def shapeimage(self,shapeimage):
+        if shapeimage!=None:
+            self.shapeimage=shapeimage
+        return shapeimage
 
     # set variables
     def var(self,k):

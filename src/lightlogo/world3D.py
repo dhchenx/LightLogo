@@ -41,7 +41,11 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 import sys
 import numpy as np
+import os
 from tkinter import messagebox
+from lightlogo.annotation3d import ImageAnnotations3D
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
+
 from lightlogo.turtle3D import *
 from lightlogo.surface3D import *
 from lightlogo.text3D import *
@@ -61,6 +65,8 @@ class world3D:
         self.list_turtles=[]
         self.list_surfaces=[]
         self.list_texts=[]
+        # a list of actions
+        self.list_actions=[]
         # inner functions
         self.setup=None
         self.go=None
@@ -72,6 +78,7 @@ class world3D:
         self.poly_ax={}
         self.surfaces_ax={}
         self.texts_ax={}
+        self.annotation_ax={} # shape image
         # status of steps
         self.is_clicked=False
         self.is_pressed=False
@@ -88,6 +95,9 @@ class world3D:
         self.should_exit_on_click=False
         self.should_exit_on_press = False
         self._last_input_value=""
+        # other axis
+        self.ax2d=None
+
 
     def create(self,x_label="X",y_label="Y",z_label="Z",proj_type="persp",style="seaborn-ticks",show_axes=True,show_xaxis=False,show_yaxis=False,show_grid=False,
                background_color=None,background_color_3d=None,
@@ -103,10 +113,16 @@ class world3D:
         with plt.style.context(style):
 
             self.fig = plt.figure()
+
+            # create a 2d axis
+            # self.ax2d = self.fig.add_subplot(1,1,1,frame_on=False)
+            # self.ax2d.axis("off")
+            # self.ax2d.axis([0, 1, 0, 1])
+
             #self.fig.set_figwidth(figure_width)
             #self.fig.set_figheight(figure_height)
             #self.fig.set_dpi(dpi)
-            self.ax = plt.axes(projection="3d")
+            self.ax = self.fig.add_subplot(1,1,1,projection="3d")
             self.ax.set_proj_type(proj_type)
 
             self.ax.set_title(self.title)
@@ -140,7 +156,23 @@ class world3D:
             if background_color!=None:
                 self.fig.set_facecolor(background_color)
 
+
+
         return self.ax
+
+    def actions(self,actions):
+        if actions!=None:
+            self.list_actions=actions
+        return self.list_actions
+
+    # create turtles
+    def create_turtles_random(self,N,properties=None):
+        list_new_turtles=[]
+        for idx in range(N):
+            t3=turtle3D(xyz=self.random_cor())
+            list_new_turtles.append(t3)
+        self.list_turtles=list_new_turtles
+        return list_new_turtles
 
     def surfaces(self,surfaces=None):
         if surfaces!=None:
@@ -300,6 +332,18 @@ class world3D:
 
         return d
 
+    def _invoke_agent_method(self,object, method_name, parameters):
+        if len(parameters)==0:
+            return getattr(object, method_name)()
+        if len(parameters)==1:
+            return getattr(object, method_name)(parameters[0])
+        if len(parameters)==2:
+            return getattr(object, method_name)(parameters[0],parameters[1])
+        if len(parameters)==3:
+            return getattr(object, method_name)(parameters[0],parameters[1],parameters[2])
+        if len(parameters)==4:
+            return getattr(object, method_name)(parameters[0],parameters[1],parameters[2],parameters[3])
+
     def get_xyz_mouse_click(self,event, ax):
         """
         Get coordinates clicked by user
@@ -330,29 +374,46 @@ class world3D:
         x, y, z = self.inv_transform(xd, yd, z, ax.M)
         return x, y, z
 
+    def _get_shape_image(self,path,format="png"):
+        return OffsetImage(plt.imread(path, format=format), zoom=.1)
+
+    def _get_lightlogo_root(self):
+        return os.path.dirname(__file__)
+
     def update_worlds(self,num,points_ax,lines_ax):
 
         if self.is_clicked:
-            print("doing clicked event, ignore this frame!")
+            print("when doing clicked event, ignore this frame!")
             return self.points_ax, self.lines_ax
 
         if self.is_deleting:
-            print("doing deleting event, ignore this frame!")
+            print("when doing deleting event, ignore this frame!")
             return self.points_ax, self.lines_ax
 
+        # simulation is started
         if not self.is_start:
             self.is_start=True
             return self.points_ax,self.lines_ax
 
+        # show frame info
         self.txt.set_text('Frame = {:d}'.format(num))  # for debug purposes
 
-        # calculate the new sets of coordinates here. The resulting arrays should have the same shape
+        # user define function
         if self.go!=None:
             self.go(num,self)
 
-        # die
+        # play list of actions predefined
+        if self.list_actions!=None and len(self.list_actions)!=0:
+            if num < len(self.list_actions):
+                action=self.list_actions[num]
+                if len(action)<=5:
+                    self._invoke_agent_method(action[0],action[1],action[2])
+                else:
+                    print("Error: Action({action}) should not include more than 5 parameters!")
+
+        # agent dies
         # self.is_deleting=True
-        print("points_ax: ",len(self.points_ax))
+        # print("points_ax: ",len(self.points_ax))
         list_new_turtles=[]
         for idx in range(len(self.list_turtles)):
             turtle_id=str(self.list_turtles[idx].id())
@@ -368,21 +429,33 @@ class world3D:
 
         # self.is_deleting=False
 
-        # turtle agents create or update
+        # create or update turtles
         for turtle in self.list_turtles:
+            # points
             idx=turtle.id()
             ax_point=None
             if str(idx) in self.points_ax.keys():
                 ax_point=self.points_ax[str(idx)]
+                ax_point.set_data([turtle.xcor()], [turtle.ycor()])
+                # print(new_z)
+                ax_point.set_3d_properties([turtle.zcor()], 'z')
+                ax_point.set_markersize(turtle.size())
+                ax_point.set_color(turtle.color())
+                ax_point.set_marker(turtle.shape())
+
             else:
-                ax_point, =  self.ax.plot([turtle.xcor()],[turtle.ycor()], [turtle.zcor()], marker= turtle.shape(), color=turtle.color(),markersize=turtle.size())
+                ax_point, =  self.ax.plot([turtle.xcor()],[turtle.ycor()], [turtle.zcor()], marker=turtle.shape(), color=turtle.color(),markersize=turtle.size())
+            if ax_point!=None:
                 self.points_ax[str(idx)]=ax_point
-            ax_point.set_data([turtle.xcor()], [turtle.ycor()])
-            # print(new_z)
-            ax_point.set_3d_properties([turtle.zcor()], 'z')
-            ax_point.set_markersize(turtle.size())
-            ax_point.set_color(turtle.color())
-            ax_point.set_marker(turtle.shape())
+
+            # annotation (shape images)
+            # print("shape file: ",self._get_lightlogo_root()+"/tur.png")
+            if self.ax2d!=None:
+                xs=[turtle.xcor()]
+                ys=[turtle.ycor()]
+                zs=[turtle.zcor()]
+                imgs = [np.random.rand(10, 10) for i in range(len(xs))]
+                ia = ImageAnnotations3D(np.c_[xs, ys, zs], imgs, self.ax, self.ax2d)
 
         # turtle's lines
         # clear lines
@@ -552,18 +625,21 @@ class world3D:
 
     def clearscreen(self):
         self.is_deleting=True
-        '''
-        self.list_turtles=[]
+
+        # self.list_turtles=[]
         for k in list(self.points_ax.keys()):
             self.points_ax.pop(k).remove()
         for k in list(self.lines_ax.keys()):
             self.lines_ax.pop(k).remove()
         self.lines_ax={}
         self.points_ax={}
-        '''
+        for k in list(self.surfaces_ax.keys()):
+            self.surfaces_ax.pop(k).remove()
+        for k in list(self.texts_ax.keys()):
+            self.texts_ax.pop(k).remove()
+        self.texts_ax={}
+        self.surfaces_ax={}
 
-        for idx in range(len(self.list_turtles)):
-            self.list_turtles[idx].die()
         self.is_deleting=False
 
     def resetscreen(self):
